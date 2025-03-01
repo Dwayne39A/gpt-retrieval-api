@@ -1,18 +1,17 @@
-
 import os
 import json
 import openai
-import pinecone
+from pinecone import Pinecone  # Corrected import
 from flask import Flask, request, jsonify
 
-# Load API keys from Replit Secrets
+# Load API keys from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENV = os.getenv("PINECONE_ENV")
 
-# Initialize Pinecone
-pc = pinecone.Pinecone(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
-index = pinecone.Index("knowledge-base")  # Update with your index name
+# Initialize Pinecone client (Fix applied here)
+pc = Pinecone(api_key=PINECONE_API_KEY)
+index = pc.Index("knowledge-base")  # Corrected usage
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -25,8 +24,7 @@ def home():
 def get_embedding(text):
     response = openai.Embedding.create(
         input=text,
-        model="text-embedding-ada-002",
-        api_key=OPENAI_API_KEY
+        model="text-embedding-ada-002"
     )
     return response["data"][0]["embedding"]
 
@@ -40,11 +38,11 @@ def retrieve():
     query_embedding = get_embedding(query)
 
     # Search Pinecone
-    results = index.query(query_embedding, top_k=3, include_metadata=True)
+    results = index.query(vector=query_embedding, top_k=3, include_metadata=True)  # Fix applied
 
     # Extract relevant documents
     retrieved_docs = [match["metadata"]["text"] for match in results["matches"]]
-    
+
     return jsonify({"retrieved_text": retrieved_docs})
 
 # Run the API
