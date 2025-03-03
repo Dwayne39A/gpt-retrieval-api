@@ -47,12 +47,19 @@ def retrieve():
         # Search Pinecone
         results = index.query(vector=query_embedding, top_k=3, include_metadata=True)
 
-        # Extract relevant documents
-        retrieved_docs = [match["metadata"]["text"] for match in results["matches"]]
-        
+        print("Pinecone results:", results)  # Debugging log
+
+        # Extract relevant documents safely
+        retrieved_docs = []
+        for match in results.get("matches", []):  # Ensure "matches" exists
+            metadata = match.get("metadata", {})  # Get metadata safely
+            text = metadata.get("text", "No text found")  # Prevent KeyError
+            retrieved_docs.append(text)
+
         return jsonify({"retrieved_text": retrieved_docs})
 
     except Exception as e:
+        print("Error:", str(e))  # Print the full error to logs
         return jsonify({"error": str(e)}), 500
 
 # Run the API
